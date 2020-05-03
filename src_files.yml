@@ -29,6 +29,11 @@ scm:
     latch_scm/register_file_multi_way_1w_64b_multi_port_read_32b.sv,
     latch_scm/register_file_multi_way_1w_multi_port_read.sv,
   ]
+scm_flop:
+  files: [
+    flop_scm/register_file_1r_1w.sv,
+    flop_scm/register_file_1w_multi_port_read.sv,
+  ]
 scm_fpga:
   vlog_opts: [
     +nowarnSVCHK,
