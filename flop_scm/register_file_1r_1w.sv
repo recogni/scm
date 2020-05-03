@@ -53,96 +53,15 @@ module register_file_1r_1w
     input  logic [DATA_WIDTH-1:0]                 WriteData
 );
 
-    localparam    NUM_WORDS = 2**ADDR_WIDTH;
-
-    // Read address register, located at the input of the address decoder
-    logic [ADDR_WIDTH-1:0]                        RAddrRegxDP; 
-    logic [NUM_WORDS-1:0]                         RAddrOneHotxD;
-
-
-    logic [DATA_WIDTH-1:0]                        MemContentxDP[NUM_WORDS];
-
-    logic [NUM_WORDS-1:0]                         WAddrOneHotxD;
-    logic [NUM_WORDS-1:0]                         ClocksxC;
-    logic [DATA_WIDTH-1:0]                        WDataIntxD;
-
-    logic                                         clk_int;
-
-    int unsigned i;
-    int unsigned j;
-    int unsigned k;
-    int unsigned l;
-    int unsigned m;
-
-    genvar x;
-    genvar y;
-
-    cluster_clock_gating CG_WE_GLOBAL
-    (
-        .clk_o     ( clk_int       ),
-        .en_i      ( WriteEnable   ),
-        .test_en_i ( 1'b0          ),
-        .clk_i     ( clk           )
+    register_file_1w_multi_port_read #( 
+        .ADDR_WIDTH(ADDR_WIDTH),
+        .DATA_WIDTH(DATA_WIDTH),
+        .N_READ(1), 
+        .N_WRITE(1)
+    ) regfile_1w_1r (
+        .rst_n(1'b0),
+        .test_en_i(1'b0),
+        .*
     );
-
-    //-----------------------------------------------------------------------------
-    //-- READ : Read address register
-    //-----------------------------------------------------------------------------
-    always_ff @(posedge clk)
-    begin : p_RAddrReg
-        if(ReadEnable)
-            RAddrRegxDP <= ReadAddr;
-    end
-
-
-    //-----------------------------------------------------------------------------
-    //-- READ : Read address decoder RAD
-    //-----------------------------------------------------------------------------  
-    always_comb
-    begin : p_RAD
-        RAddrOneHotxD = '0;
-        RAddrOneHotxD[RAddrRegxDP] = 1'b1;
-    end
-    assign ReadData = MemContentxDP[RAddrRegxDP];
-
-
-    //-----------------------------------------------------------------------------
-    //-- WRITE : Write Address Decoder (WAD), combinatorial process
-    //-----------------------------------------------------------------------------
-    always_comb
-    begin : p_WAD
-        for(i=0; i<NUM_WORDS; i++)
-        begin : p_WordIter
-            if ( (WriteEnable == 1'b1 ) && (WriteAddr == i[ADDR_WIDTH-1:0]) )
-                WAddrOneHotxD[i] = 1'b1;
-            else
-                WAddrOneHotxD[i] = 1'b0;
-        end
-    end
-
-    //-----------------------------------------------------------------------------
-    //-- WRITE : Clock gating (if integrated clock-gating cells are available)
-    //-----------------------------------------------------------------------------
-    generate
-    for(x=0; x<NUM_WORDS; x++)
-    begin : CG_CELL_WORD_ITER
-        cluster_clock_gating CG_Inst
-        (
-            .clk_o     ( ClocksxC[x]      ),
-            .en_i      ( WAddrOneHotxD[x] ),
-            .test_en_i ( 1'b0             ),
-            .clk_i     ( clk_int          )
-        );
-    end
-    endgenerate
-
-    generate
-        for(x=0; x<NUM_WORDS; x++)
-        begin : DATA_ITER
-            always @(posedge ClocksxC[x]) begin
-                MemContentxDP[x] <= WriteData;
-            end    
-        end
-    endgenerate
 
 endmodule
